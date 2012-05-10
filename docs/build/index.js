@@ -2,9 +2,10 @@
 var hogan = require('hogan.js')
   , fs    = require('fs')
   , prod  = process.argv[2] == 'production'
+  , useLang  = process.argv[3] 
   , title = 'Twitter Bootstrap'
 
-var layout, pages
+var layout, pages, lang, langStats
 
 // compile layout template
 layout = fs.readFileSync(__dirname + '/../templates/layout.mustache', 'utf-8')
@@ -12,6 +13,14 @@ layout = hogan.compile(layout, { sectionTags: [{o:'_i', c:'i'}] })
 
 // retrieve pages
 pages = fs.readdirSync(__dirname + '/../templates/pages')
+
+if (useLang){
+  langStats = fs.statSync(__dirname + '/../templates/i18n/'+useLang+ '.js')
+  console.log(langStats)
+  if (langStats.isFile()) {
+    lang = require(__dirname + '/../templates/i18n/'+useLang).messages
+  }
+}
 
 // iterate over pages
 pages.forEach(function (name) {
@@ -22,7 +31,14 @@ pages.forEach(function (name) {
     , context = {}
 
   context[name.replace(/\.mustache$/, '')] = 'active'
-  context._i = true
+  context._i = function(text){
+    if (lang && lang[text]){
+      return lang[text]
+    }
+    return text;
+  }
+
+
   context.production = prod
   context.title = name
     .replace(/\.mustache/, '')
